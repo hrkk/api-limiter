@@ -1,9 +1,11 @@
-package dk.ronninit;
+package ronninit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.annotation.PreDestroy;
@@ -45,12 +47,22 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
         }
         SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
         boolean allowRequest = rateLimiter.tryAcquire();
-
+        System.err.println("AllowRequest "+allowRequest);
         if (!allowRequest) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         }
         response.addHeader("X-RateLimit-Limit", String.valueOf(hourlyLimit));
         return allowRequest;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
+                           @Nullable ModelAndView modelAndView) throws Exception {
+        String clientId = request.getHeader("Client-Id");
+        clientId="020";
+        SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
+        System.err.println("release rate limit");
+        rateLimiter.release();
     }
 
     private SimpleRateLimiter getRateLimiter(String clientId2) {

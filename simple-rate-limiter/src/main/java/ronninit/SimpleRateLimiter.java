@@ -1,4 +1,4 @@
-package dk.ronninit;
+package ronninit;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,6 +25,10 @@ public class SimpleRateLimiter {
 
     public boolean tryAcquire() {
         return semaphore.tryAcquire();
+    }
+
+    public void release() {
+        semaphore.release();
     }
 
     public void stop() {

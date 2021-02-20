@@ -1,4 +1,4 @@
-package dk.ronninit;
+package ronninit;
 
 public class RectangleDimensionsV1 {
 

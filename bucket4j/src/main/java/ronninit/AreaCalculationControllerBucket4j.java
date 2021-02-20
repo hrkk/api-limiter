@@ -1,4 +1,4 @@
-package dk.ronninit;
+package ronninit;
 
 
 import io.github.bucket4j.Bandwidth;
@@ -16,18 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
 
+// based on https://www.baeldung.com/spring-bucket4j
 @Slf4j
 @RestController
 @SpringBootApplication
-public class AreaCalculationController {
+public class AreaCalculationControllerBucket4j {
 
     public static void main(String[] args) {
-        SpringApplication.run(AreaCalculationController.class, args);
+        SpringApplication.run(AreaCalculationControllerBucket4j.class, args);
     }
 
     private final Bucket bucket;
 
-    public AreaCalculationController() {
+    public AreaCalculationControllerBucket4j() {
         Bandwidth limit = Bandwidth.classic(1,  Refill.greedy(1, Duration.ofSeconds(10)));
         this.bucket = Bucket4j.builder()
                 .addLimit(limit)
@@ -37,6 +38,7 @@ public class AreaCalculationController {
     @PostMapping(value = "/api/v1/area/rectangle")
     public ResponseEntity<AreaV1> rectangle(@RequestBody RectangleDimensionsV1 dimensions) {
         if (bucket.tryConsume(1)) {
+
             return ResponseEntity.ok(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()));
         }
         log.info(HttpStatus.TOO_MANY_REQUESTS.toString());

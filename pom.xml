@@ -10,6 +10,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>bucket4j</module>
+        <module>simple-rate-limiter</module>
     </modules>
 
     <properties>
