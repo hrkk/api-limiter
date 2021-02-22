@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Duration;
 
 // based on https://www.baeldung.com/spring-bucket4j
+// curl -X POST http://localhost:8080/api/v1/area/rectangle -H "Content-Type: application/json" -H "Client-Id: 030" -d '{ "length": 10, "width": 12 }'
 @Slf4j
 @RestController
 @SpringBootApplication
@@ -44,6 +45,4 @@ public class AreaCalculationControllerBucket4j {
         log.info(HttpStatus.TOO_MANY_REQUESTS.toString());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
     }
-
-
 }

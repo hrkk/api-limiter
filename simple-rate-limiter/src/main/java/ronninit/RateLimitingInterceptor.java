@@ -1,5 +1,6 @@
 package ronninit;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,16 +19,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @Component
 public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
 
-    private static final Logger logger = LoggerFactory.getLogger(RateLimitingInterceptor.class);
-
-   // @Value("${rate.limit.enabled}")
+    // @Value("${rate.limit.enabled}")
     private boolean enabled = true;
 
     //@Value("${rate.limit.hourly.limit}")
-    private int hourlyLimit = 1;
+    private int tokens = 1;
 
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
@@ -40,18 +40,18 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
             return true;
         }
         String clientId = request.getHeader("Client-Id");
-        clientId="020";
+
         // let non-API requests pass
         if (clientId == null) {
             return true;
         }
         SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
         boolean allowRequest = rateLimiter.tryAcquire();
-        System.err.println("AllowRequest "+allowRequest);
+        System.err.println("AllowRequest " + allowRequest);
         if (!allowRequest) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         }
-        response.addHeader("X-RateLimit-Limit", String.valueOf(hourlyLimit));
+        response.addHeader("X-RateLimit-Limit", String.valueOf(tokens));
         return allowRequest;
     }
 
@@ -59,23 +59,20 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
                            @Nullable ModelAndView modelAndView) throws Exception {
         String clientId = request.getHeader("Client-Id");
-        clientId="020";
         SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
         System.err.println("release rate limit");
         rateLimiter.release();
     }
 
-    private SimpleRateLimiter getRateLimiter(String clientId2) {
-        String clientId = clientId2;
-        Optional<SimpleRateLimiter> simpleRateLimiter = limiters.computeIfAbsent(clientId2, applicationId -> Optional.of(createRateLimiter(applicationId)));
-
+    private SimpleRateLimiter getRateLimiter(String clientId) {
+        Optional<SimpleRateLimiter> simpleRateLimiter = limiters.computeIfAbsent(clientId, applicationId -> Optional.of(createRateLimiter(applicationId)));
         return simpleRateLimiter.get();
 
     }
 
     private SimpleRateLimiter createRateLimiter(String applicationId) {
-        logger.info("Creating rate limiter for applicationId={}", applicationId);
-        return SimpleRateLimiter.create(hourlyLimit, TimeUnit.MINUTES); //, scheduler, applicationId);
+        log.info("Creating rate limiter for applicationId={}", applicationId);
+        return SimpleRateLimiter.create(tokens, TimeUnit.MINUTES); //, scheduler, applicationId);
     }
 
 
