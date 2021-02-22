@@ -39,7 +39,6 @@ public class AreaCalculationControllerBucket4j {
     @PostMapping(value = "/api/v1/area/rectangle")
     public ResponseEntity<AreaV1> rectangle(@RequestBody RectangleDimensionsV1 dimensions) {
         if (bucket.tryConsume(1)) {
-
             return ResponseEntity.ok(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()));
         }
         log.info(HttpStatus.TOO_MANY_REQUESTS.toString());

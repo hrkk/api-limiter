@@ -12,6 +12,8 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import javax.annotation.PreDestroy;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,9 +31,8 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
     //@Value("${rate.limit.hourly.limit}")
     private int tokens = 1;
 
-    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
-
     private Map<String, Optional<SimpleRateLimiter>> limiters = new ConcurrentHashMap<>();
+
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -43,7 +44,6 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
 
         // let non-API requests pass
         if (clientId == null) {
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             return true;
         }
         SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
@@ -80,6 +80,10 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
     @PreDestroy
     public void destroy() {
         // loop and finalize all limiters
-        scheduler.shutdown();
+        log.info("destroy");
+        limiters.values().forEach(e -> e.ifPresent(rateLimiter ->
+                        rateLimiter.stop()
+                )
+        );
     }
 }

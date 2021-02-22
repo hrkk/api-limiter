@@ -40,6 +40,5 @@ public class SimpleRateLimiter {
         scheduler.scheduleAtFixedRate(() -> {
             semaphore.release(maxPermits - semaphore.availablePermits());
         }, 1, 1, timePeriod);
-
     }
 }
