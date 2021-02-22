@@ -43,11 +43,12 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
 
         // let non-API requests pass
         if (clientId == null) {
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             return true;
         }
         SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
         boolean allowRequest = rateLimiter.tryAcquire();
-        System.err.println("AllowRequest " + allowRequest);
+        log.info("AllowRequest " + allowRequest);
         if (!allowRequest) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         }
