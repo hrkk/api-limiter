@@ -11,7 +11,7 @@
     <modules>
         <module>bucket4j</module>
         <module>simple-rate-limiter</module>
-        <module>lamda-rate-limiter</module>
+        <module>lambda-rate-limiter</module>
     </modules>
 
     <properties>
