@@ -1,5 +1,4 @@
-package ronninit;
-
+package dk.ronin;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
@@ -11,15 +10,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 // based on https://techblog.bozho.net/basic-api-rate-limiting/
 
-// curl -X POST http://localhost:8080/api/v1/area/rectangle -H "Content-Type: application/json" -H "X-api-key: 030" -d '{ "length": 10, "width": 12 }'
+// curl -X POST http://localhost:8080/api/v1/area/rectangle -H "Content-Type: application/json" -d '{ "length": 10, "width": 12 }'
 //{"shape":"rectangle","area":120.0}%
 @Slf4j
 @RestController
 @SpringBootApplication
-public class AreaCalculationControllerSimple {
+public class AreaCalculationControllerLambda {
 
     public static void main(String[] args) {
-        SpringApplication.run(AreaCalculationControllerSimple.class, args);
+        SpringApplication.run(AreaCalculationControllerLambda.class, args);
     }
 
     @PostMapping(value = "/api/v1/area/rectangle")
