@@ -24,7 +24,7 @@ class AreaCalculationControllerSimpleTest {
     RestTemplate restTemplate = new RestTemplate();
 
     @Test
-    public void testAllDifferentClientIds() throws InterruptedException {
+    public void test_with_100_different_api_keys() throws InterruptedException {
         //  given
         Request request = Request.builder().length(10).width(5).build();
         List<String> results = new ArrayList<>();
@@ -34,21 +34,35 @@ class AreaCalculationControllerSimpleTest {
         for (int i = 0; i < 100; i++) {
             int finalI = i;
             executorService.execute(() -> {
-                log.info("Asynchronous task");
+                log.info("BEIGN Asynchronous task");
                 ResponseEntity<String> exchange = restTemplate.exchange(URL, HttpMethod.POST, new HttpEntity(request, headers(finalI)), String.class);
-                log.info("Asynchronous task {} {}", exchange.getStatusCodeValue(), exchange.getBody());
+                log.info("END Asynchronous task {} {}", exchange.getStatusCodeValue(), exchange.getBody());
                 results.add(exchange.getBody());
             });
         }
         Thread.sleep(10000);
         // then
         Assertions.assertEquals(100, results.size());
+
+        // and then make sure we can call again
+        results.clear();
+        for (int i = 0; i < 100; i++) {
+            int finalI = i;
+            executorService.execute(() -> {
+                log.info("BEIGN Asynchronous task");
+                ResponseEntity<String> exchange = restTemplate.exchange(URL, HttpMethod.POST, new HttpEntity(request, headers(finalI)), String.class);
+                log.info("END Asynchronous task {} {}", exchange.getStatusCodeValue(), exchange.getBody());
+                results.add(exchange.getBody());
+            });
+        }
+        Thread.sleep(10000);
         executorService.shutdown();
+        Assertions.assertEquals(100, results.size());
 
     }
 
     @Test
-    public void testSameClientIds() throws InterruptedException {
+    public void test_with_10_same_api_keys() throws InterruptedException {
         //  given
         Request request = Request.builder().length(10).width(5).build();
         List<String> results = new ArrayList<>();
@@ -60,11 +74,12 @@ class AreaCalculationControllerSimpleTest {
             int finalI = 1;
             executorService.execute(() -> {
                 try {
+                    log.info("BEIGN Asynchronous task");
                     ResponseEntity<String> exchange = restTemplate.exchange(URL, HttpMethod.POST, new HttpEntity(request, headers(finalI)), String.class);
-                    log.info("Asynchronous task {} {}", exchange.getStatusCodeValue(), exchange.getBody());
+                    log.info("END Asynchronous task {} {}", exchange.getStatusCodeValue(), exchange.getBody());
                     results.add(exchange.getBody());
                 } catch (Exception e) {
-                    log.info("Asynchronous task failed {}", e.getMessage());
+                    log.info("END Asynchronous task failed {}", e.getMessage());
                     fails.add(e.getMessage());
                 }
 
@@ -82,7 +97,7 @@ class AreaCalculationControllerSimpleTest {
         headers.add(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE);
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
         headers.add(HttpHeaders.ACCEPT_CHARSET, "charset=UTF-8");
-        headers.add("Client-Id", "030" + i);
+        headers.add("X-api-key", "030" + i);
         return headers;
     }
 }

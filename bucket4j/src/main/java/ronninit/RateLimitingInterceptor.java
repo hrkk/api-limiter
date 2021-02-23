@@ -2,6 +2,7 @@ package ronninit;
 
 import io.github.bucket4j.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
@@ -13,6 +14,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
@@ -26,10 +28,13 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
     }
 
     private Bucket newBucket(String apiKey) {
-        Bandwidth limit = Bandwidth.classic(rateLimitConfig.getTokens(), Refill.greedy(rateLimitConfig.getTokens(), Duration.ofMinutes(1)));
+        int minutes = 1;
+        log.info("Creating rate limiter for apiKey={} with tokens {} pr {} minutes", apiKey, rateLimitConfig.getTokens(), minutes);
+        Bandwidth limit = Bandwidth.classic(rateLimitConfig.getTokens(), Refill.greedy(rateLimitConfig.getTokens(), Duration.ofMinutes(minutes)));
         return Bucket4j.builder()
                 .addLimit(limit)
                 .build();
+
     }
 
     @Override
@@ -61,6 +66,7 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
         String apiKey = request.getHeader("X-api-key");
         Bucket bucket = resolveBucket(apiKey);
+        log.info("service called ended for apiKey={} - open for request again for this key by adding a token to the bucket", apiKey);
         bucket.addTokens(1);
     }
 }

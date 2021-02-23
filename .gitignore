@@ -24,3 +24,7 @@ hs_err_pid*
 /.idea/*
 /api-limiter.iml
 /bucket4j/bucket4j.iml
+/simple-rate-limiter/target/classes/application.yaml
+/bucket4j/target/*
+/simple-rate-limiter/target/*
+/simple-rate-limiter/simple-rate-limiter.iml

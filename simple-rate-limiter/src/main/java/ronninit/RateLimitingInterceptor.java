@@ -12,7 +12,6 @@ import javax.annotation.PreDestroy;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -23,7 +22,7 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
 
     private final RateLimitConfig rateLimitConfig;
 
-    private Map<String, Optional<SimpleRateLimiter>> limiters = new ConcurrentHashMap<>();
+    private Map<String, SimpleRateLimiter> limiters = new ConcurrentHashMap<>();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -31,45 +30,47 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
         if (!rateLimitConfig.isEnabled()) {
             return true;
         }
-        String clientId = request.getHeader("Client-Id");
+        String apiKey = request.getHeader("X-api-key");
+        if (apiKey == null || apiKey.isEmpty()) {
+            response.sendError(HttpStatus.BAD_REQUEST.value(), "Missing Header: X-api-key");
+            return false;
+        }
 
-        // let non-API requests pass
-        if (clientId == null) {
-            return true;
-        }
-        SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
+        SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter(apiKey);
         boolean allowRequest = rateLimiter.tryAcquire();
-        log.info("AllowRequest " + allowRequest);
-        if (!allowRequest) {
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+        if (allowRequest) {
+            response.addHeader("X-RateLimit-Limit", String.valueOf(rateLimitConfig.getTokens()));
+            return true;
+        } else {
+            response.sendError(HttpStatus.TOO_MANY_REQUESTS.value(),
+                    "You have exhausted your API Request Quota");
+            return false;
         }
-        response.addHeader("X-RateLimit-Limit", String.valueOf(rateLimitConfig.getTokens()));
-        return allowRequest;
+
     }
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
                            @Nullable ModelAndView modelAndView) throws Exception {
-        String clientId = request.getHeader("Client-Id");
-        SimpleRateLimiter rateLimiter = getRateLimiter(clientId);
-        System.err.println("release rate limit");
+        String apiKey = request.getHeader("X-api-key");
+        SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter(apiKey);
+        log.info("service called ended for apiKey={} - open for request again for this key by adding permits by one", apiKey);
         rateLimiter.release();
     }
 
-    private SimpleRateLimiter getRateLimiter(String clientId) {
-        Optional<SimpleRateLimiter> simpleRateLimiter = limiters.computeIfAbsent(clientId, applicationId -> Optional.of(createRateLimiter(applicationId)));
-        return simpleRateLimiter.get();
+    public SimpleRateLimiter resolveSimpleRateLimiter(String apiKey) {
+        return limiters.computeIfAbsent(apiKey, this::newRateLimiter);
     }
 
-    private SimpleRateLimiter createRateLimiter(String applicationId) {
-        log.info("Creating rate limiter for applicationId={} with tokens {} pr minutes", applicationId, rateLimitConfig.getTokens());
-        return SimpleRateLimiter.create(rateLimitConfig.getTokens(), TimeUnit.MINUTES); //, scheduler, applicationId);
+    private SimpleRateLimiter newRateLimiter(String apiKey) {
+        log.info("Creating rate limiter for apiKey={} with tokens {} pr 1 minute", apiKey, rateLimitConfig.getTokens());
+        return SimpleRateLimiter.create(rateLimitConfig.getTokens(), TimeUnit.MINUTES);
     }
 
     @PreDestroy
     public void destroy() {
         // loop and finalize all limiters
         log.info("destroy");
-        limiters.values().forEach(e -> e.ifPresent(rateLimiter -> rateLimiter.stop()));
+        limiters.values().forEach(rateLimiter -> rateLimiter.stop());
     }
 }
