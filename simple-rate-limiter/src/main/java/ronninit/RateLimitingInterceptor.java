@@ -1,8 +1,7 @@
 package ronninit;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -12,32 +11,24 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import javax.annotation.PreDestroy;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@RequiredArgsConstructor
 @Slf4j
 @Component
 public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
 
-    // @Value("${rate.limit.enabled}")
-    private boolean enabled = true;
-
-    //@Value("${rate.limit.hourly.limit}")
-    private int tokens = 1;
+    private final RateLimitConfig rateLimitConfig;
 
     private Map<String, Optional<SimpleRateLimiter>> limiters = new ConcurrentHashMap<>();
-
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
-        if (!enabled) {
+        if (!rateLimitConfig.isEnabled()) {
             return true;
         }
         String clientId = request.getHeader("Client-Id");
@@ -52,7 +43,7 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
         if (!allowRequest) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         }
-        response.addHeader("X-RateLimit-Limit", String.valueOf(tokens));
+        response.addHeader("X-RateLimit-Limit", String.valueOf(rateLimitConfig.getTokens()));
         return allowRequest;
     }
 
@@ -68,22 +59,17 @@ public class RateLimitingInterceptor extends HandlerInterceptorAdapter {
     private SimpleRateLimiter getRateLimiter(String clientId) {
         Optional<SimpleRateLimiter> simpleRateLimiter = limiters.computeIfAbsent(clientId, applicationId -> Optional.of(createRateLimiter(applicationId)));
         return simpleRateLimiter.get();
-
     }
 
     private SimpleRateLimiter createRateLimiter(String applicationId) {
-        log.info("Creating rate limiter for applicationId={}", applicationId);
-        return SimpleRateLimiter.create(tokens, TimeUnit.MINUTES); //, scheduler, applicationId);
+        log.info("Creating rate limiter for applicationId={} with tokens {} pr minutes", applicationId, rateLimitConfig.getTokens());
+        return SimpleRateLimiter.create(rateLimitConfig.getTokens(), TimeUnit.MINUTES); //, scheduler, applicationId);
     }
-
 
     @PreDestroy
     public void destroy() {
         // loop and finalize all limiters
         log.info("destroy");
-        limiters.values().forEach(e -> e.ifPresent(rateLimiter ->
-                        rateLimiter.stop()
-                )
-        );
+        limiters.values().forEach(e -> e.ifPresent(rateLimiter -> rateLimiter.stop()));
     }
 }

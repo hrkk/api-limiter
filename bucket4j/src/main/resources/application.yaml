@@ -1,0 +1,3 @@
+rate.limit.enabled: true
+rate.limit.minute.limit: 1
+
