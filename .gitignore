@@ -28,3 +28,5 @@ hs_err_pid*
 /bucket4j/target/*
 /simple-rate-limiter/target/*
 /simple-rate-limiter/simple-rate-limiter.iml
+/lambda-rate-limiter/target/*
+/lambda-rate-limiter/lambda-rate-limiter.iml

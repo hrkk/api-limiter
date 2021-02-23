@@ -17,6 +17,24 @@ public class AreaCalculationService {
 
     private Map<String, SimpleRateLimiter> limiters = new ConcurrentHashMap<>();
 
+    LimiterFunctionalInterface limiter = (limiter, dimensions1) -> {
+        boolean allowRequest = limiter.tryAcquire();
+        if (!allowRequest) {
+            throw new TooManyRequestException("Too Many Requests");
+        }
+        Thread.sleep(5000);
+        AreaV1 area = new AreaV1("rectangle", dimensions1.getLength() * dimensions1.getWidth());
+        limiter.release();
+        return area;
+    };
+
+
+    public AreaV1 functionalRectangle(String apiKey, RectangleDimensionsV1 dimensions) throws InterruptedException, TooManyRequestException {
+        SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter("rectangle/" + apiKey);
+        AreaV1 areaV1 = limiter.allow(rateLimiter, dimensions);
+        return areaV1;
+    }
+
     public AreaV1 rectangle(String apiKey, RectangleDimensionsV1 dimensions) throws InterruptedException, TooManyRequestException {
         SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter("rectangle/" + apiKey);
         boolean allowRequest = rateLimiter.tryAcquire();
