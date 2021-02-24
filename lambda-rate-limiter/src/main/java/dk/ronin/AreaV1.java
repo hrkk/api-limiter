@@ -1,5 +1,8 @@
 package dk.ronin;
 
+import lombok.Data;
+
+@Data
 public class AreaV1 {
 
     private String shape;

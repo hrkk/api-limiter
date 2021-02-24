@@ -36,13 +36,10 @@ public class AreaCalculationControllerLambda {
             return ResponseEntity.badRequest().body("Missing Header: X-api-key");
         }
         try {
-            AreaV1 rectangle = service.funcRectangle(apiKey, dimensions);
+            AreaV1 rectangle = service.functionalRectangle(apiKey, dimensions);
             return ResponseEntity.ok(rectangle);
         } catch (TooManyRequestException e) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("You have exhausted your API Request Quota for apiKey=" + apiKey);
         }
-
     }
-
-
 }
