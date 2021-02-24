@@ -1,5 +1,7 @@
 package dk.ronin;
 
+import com.google.common.util.concurrent.Uninterruptibles;
+import dk.ronin.functional.Limiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -16,6 +19,8 @@ public class AreaCalculationService {
     private final RateLimitConfig rateLimitConfig;
 
     private Map<String, SimpleRateLimiter> limiters = new ConcurrentHashMap<>();
+
+    private final Limiter onlyOneCallLimiter;
 
     LimiterFunctionalInterface limiter = (limiter, dimensions1) -> {
         boolean allowRequest = limiter.tryAcquire();
@@ -33,6 +38,14 @@ public class AreaCalculationService {
         SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter("rectangle/" + apiKey);
         AreaV1 areaV1 = limiter.allow(rateLimiter, dimensions);
         return areaV1;
+    }
+
+    public AreaV1 funcRectangle(String apiKey, RectangleDimensionsV1 dimensions) throws TooManyRequestException {
+        AreaV1 area = onlyOneCallLimiter.limit(apiKey, dimensions, rectangleDimensionsV1 -> {
+            Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
+            return new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth());
+        });
+        return area;
     }
 
     public AreaV1 rectangle(String apiKey, RectangleDimensionsV1 dimensions) throws InterruptedException, TooManyRequestException {

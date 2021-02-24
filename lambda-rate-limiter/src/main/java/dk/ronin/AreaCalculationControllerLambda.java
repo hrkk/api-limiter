@@ -16,7 +16,7 @@ import java.io.IOException;
 // based on https://techblog.bozho.net/basic-api-rate-limiting/
 
 // curl -X POST http://localhost:8080/api/v1/area/rectangle -H "Content-Type: application/json" -d '{ "length": 10, "width": 12 }'
-//{"shape":"rectangle","area":120.0}%
+//{"shape":"rectangle","area":120.0}%x
 @Slf4j
 @RestController
 @SpringBootApplication
@@ -36,7 +36,7 @@ public class AreaCalculationControllerLambda {
             return ResponseEntity.badRequest().body("Missing Header: X-api-key");
         }
         try {
-            AreaV1 rectangle = service.functionalRectangle(apiKey, dimensions);
+            AreaV1 rectangle = service.funcRectangle(apiKey, dimensions);
             return ResponseEntity.ok(rectangle);
         } catch (TooManyRequestException e) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("You have exhausted your API Request Quota for apiKey=" + apiKey);
