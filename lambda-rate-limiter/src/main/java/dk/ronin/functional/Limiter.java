@@ -38,18 +38,18 @@ public class Limiter {
         return "" + apply;
     }
 
-    public InvokeResponse invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1> action) {
+    public AreaV1Response invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1> action) {
         SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter(apiKey);
         boolean allowRequest = rateLimiter.tryAcquire();
         if (!allowRequest) {
-            return InvokeResponse.builder()
+            return AreaV1Response.builder()
                     .success(false)
                     .errorMessage("Too Many Requests")
                     .build();
         }
         AreaV1 areaV1 = action.apply(request);
         rateLimiter.release();
-        return InvokeResponse.builder()
+        return AreaV1Response.builder()
                 .success(true)
                 .response(areaV1)
                 .build();
@@ -62,15 +62,6 @@ public class Limiter {
     private SimpleRateLimiter newRateLimiter(String apiKey) {
         log.info("Creating rate limiter for apiKey={} with tokens {} pr 1 minute", apiKey, rateLimitConfig.getTokens());
         return SimpleRateLimiter.create(rateLimitConfig.getTokens(), TimeUnit.MINUTES);
-    }
-
-
-    @Builder
-    @Data
-    public static class InvokeResponse {
-        private boolean success;
-        private AreaV1 response;
-        private String errorMessage;
     }
 }
 

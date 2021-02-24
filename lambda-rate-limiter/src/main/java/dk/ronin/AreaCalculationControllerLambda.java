@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
 // based on https://techblog.bozho.net/basic-api-rate-limiting/
 
@@ -30,16 +29,18 @@ public class AreaCalculationControllerLambda {
     private final AreaCalculationService service;
 
     @PostMapping(value = "/api/v1/area/rectangle")
-    public ResponseEntity<?> rectangle(@RequestBody RectangleDimensionsV1 dimensions, HttpServletRequest request) throws InterruptedException, IOException {
+    public ResponseEntity<?> rectangle(@RequestBody RectangleDimensionsV1 dimensions, HttpServletRequest request) {
         String apiKey = request.getHeader("X-api-key");
         if (apiKey == null || apiKey.isEmpty()) {
             return ResponseEntity.badRequest().body("Missing Header: X-api-key");
         }
-        try {
-            AreaV1 rectangle = service.rectangle(apiKey, dimensions);
-            return ResponseEntity.ok(rectangle);
-        } catch (TooManyRequestException e) {
+        AreaV1Response response = service.rectangle(apiKey, dimensions);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response.getResponse());
+        } else if ("Too Many Requests".equals(response.getErrorMessage())) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("You have exhausted your API Request Quota for apiKey=" + apiKey);
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response.getErrorMessage());
         }
     }
 }

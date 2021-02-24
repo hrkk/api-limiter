@@ -1,10 +1,7 @@
 package dk.ronin.functional;
 
 import com.google.common.util.concurrent.Uninterruptibles;
-import dk.ronin.AreaV1;
-import dk.ronin.RateLimitConfig;
-import dk.ronin.RectangleDimensionsV1;
-import dk.ronin.TooManyRequestException;
+import dk.ronin.*;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -34,7 +31,7 @@ public class Main {
         request.setWidth(4);
 
 
-        Limiter.InvokeResponse invokeResponse = limiter.invoke("030", request, dimensions -> {
+        AreaV1Response invokeResponse = limiter.invoke("030", request, dimensions -> {
             Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
             AreaV1 areaV1 = new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth());
             return areaV1;
