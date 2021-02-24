@@ -1,6 +1,8 @@
 package dk.ronin.functional;
 
 import dk.ronin.*;
+import lombok.Builder;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -36,18 +38,22 @@ public class Limiter {
         return "" + apply;
     }
 
-    public AreaV1 invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1> action) throws TooManyRequestException {
+    public InvokeResponse invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1> action) {
         SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter(apiKey);
         boolean allowRequest = rateLimiter.tryAcquire();
         if (!allowRequest) {
-            throw new TooManyRequestException("Too Many Requests");
+            return InvokeResponse.builder()
+                    .success(false)
+                    .errorMessage("Too Many Requests")
+                    .build();
         }
         AreaV1 areaV1 = action.apply(request);
         rateLimiter.release();
-        return areaV1;
+        return InvokeResponse.builder()
+                .success(true)
+                .response(areaV1)
+                .build();
     }
-
-
 
     public SimpleRateLimiter resolveSimpleRateLimiter(String apiKey) {
         return limiters.computeIfAbsent(apiKey, this::newRateLimiter);
@@ -57,4 +63,15 @@ public class Limiter {
         log.info("Creating rate limiter for apiKey={} with tokens {} pr 1 minute", apiKey, rateLimitConfig.getTokens());
         return SimpleRateLimiter.create(rateLimitConfig.getTokens(), TimeUnit.MINUTES);
     }
+
+
+    @Builder
+    @Data
+    public static class InvokeResponse {
+        private boolean success;
+        private AreaV1 response;
+        private String errorMessage;
+    }
 }
+
+

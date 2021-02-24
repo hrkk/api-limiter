@@ -34,12 +34,12 @@ public class Main {
         request.setWidth(4);
 
 
-        AreaV1 area = limiter.invoke("030", request, dimensions -> {
+        Limiter.InvokeResponse invokeResponse = limiter.invoke("030", request, dimensions -> {
             Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
             AreaV1 areaV1 = new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth());
             return areaV1;
         });
-        System.out.println(area);
+        System.out.println(invokeResponse.getResponse());
 
 
         // GenericLimiter

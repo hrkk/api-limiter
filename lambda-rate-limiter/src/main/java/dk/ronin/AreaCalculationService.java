@@ -15,12 +15,15 @@ public class AreaCalculationService {
 
     private final Limiter onlyOneCallLimiter;
 
-    public AreaV1 functionalRectangle(String apiKey, RectangleDimensionsV1 dimensions) throws TooManyRequestException {
-        AreaV1 area = onlyOneCallLimiter.invoke(apiKey, dimensions, rectangleDimensionsV1 -> {
+    public AreaV1 rectangle(String apiKey, RectangleDimensionsV1 dimensions) throws TooManyRequestException {
+        Limiter.InvokeResponse invokeResponse = onlyOneCallLimiter.invoke(apiKey, dimensions, rectangleDimensionsV1 -> {
             Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
             return new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth());
         });
-        return area;
+        if ("Too Many Requests".equals(invokeResponse.getErrorMessage())) {
+            throw new TooManyRequestException("Too Many Requests");
+        }
+        return invokeResponse.getResponse();
     }
 }
 /*
