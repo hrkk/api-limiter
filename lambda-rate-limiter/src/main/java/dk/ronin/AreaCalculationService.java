@@ -18,7 +18,10 @@ public class AreaCalculationService {
     public AreaV1Response rectangle(String apiKey, RectangleDimensionsV1 dimensions) {
         AreaV1Response invokeResponse = onlyOneCallLimiter.invoke(apiKey, dimensions, rectangleDimensionsV1 -> {
             Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
-            return new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth());
+            return AreaV1Response.builder()
+                    .success(true)
+                    .response(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()))
+                    .build();
         });
 
         return invokeResponse;

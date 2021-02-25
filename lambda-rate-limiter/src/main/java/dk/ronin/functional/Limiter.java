@@ -26,8 +26,8 @@ public class Limiter {
 
     public void invokeConsume(Integer key, Consumer<Integer> action) {
         // ArrayList list = new ArrayList();
-       // HashMap map = new HashMap():
-         // Consumer<? super E> action
+        // HashMap map = new HashMap():
+        // Consumer<? super E> action
         //public V computeIfAbsent(K key,
         //        Function<? super K, ? extends V> mappingFunction) {
         action.accept(key);
@@ -38,7 +38,7 @@ public class Limiter {
         return "" + apply;
     }
 
-    public AreaV1Response invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1> action) {
+    public AreaV1Response invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1Response> actionAllowed) {
         SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter(apiKey);
         boolean allowRequest = rateLimiter.tryAcquire();
         if (!allowRequest) {
@@ -47,12 +47,11 @@ public class Limiter {
                     .errorMessage("Too Many Requests")
                     .build();
         }
-        AreaV1 areaV1 = action.apply(request);
-        rateLimiter.release();
-        return AreaV1Response.builder()
-                .success(true)
-                .response(areaV1)
-                .build();
+        try {
+            return actionAllowed.apply(request);
+        } finally {
+            rateLimiter.release();
+        }
     }
 
     public SimpleRateLimiter resolveSimpleRateLimiter(String apiKey) {
@@ -62,6 +61,12 @@ public class Limiter {
     private SimpleRateLimiter newRateLimiter(String apiKey) {
         log.info("Creating rate limiter for apiKey={} with tokens {} pr 1 minute", apiKey, rateLimitConfig.getTokens());
         return SimpleRateLimiter.create(rateLimitConfig.getTokens(), TimeUnit.MINUTES);
+    }
+
+    public void destroy() {
+        // loop and finalize all limiters
+        log.info("destroy");
+        limiters.values().forEach(SimpleRateLimiter::stop);
     }
 }
 

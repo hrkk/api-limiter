@@ -33,13 +33,18 @@ public class Main {
 
         AreaV1Response invokeResponse = limiter.invoke("030", request, dimensions -> {
             Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
-            AreaV1 areaV1 = new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth());
-            return areaV1;
+            return AreaV1Response.builder()
+                    .success(true)
+                    .response(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()))
+                    .build();
         });
         System.out.println(invokeResponse.getResponse());
 
+        limiter.destroy();
+
 
         // GenericLimiter
+        /*
         GenericLimiter<Integer, Integer> genericLimiter = new GenericLimiter<>(rateLimitConfig);
         Integer resG = genericLimiter.invoke2(7, e -> 3 + e);
         System.out.println("resG = " + resG);
@@ -52,5 +57,7 @@ public class Main {
             return myArea;
         });
         System.out.println("areaV1Generic="+areaV1Generic);
+
+         */
     }
 }

@@ -39,6 +39,6 @@ public class SimpleRateLimiter {
         scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(() -> {
             semaphore.release(maxPermits - semaphore.availablePermits());
-        }, 1, 1, timePeriod);
+        }, 1, 1,    timePeriod);
     }
 }
