@@ -37,7 +37,10 @@ public class Main {
                     .success(true)
                     .response(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()))
                     .build();
-        });
+        }, rectangleDimensionsV1 -> AreaV1Response.builder()
+                .success(false)
+                .errorMessage("Too Many Requests")
+                .build());
         System.out.println(invokeResponse.getResponse());
 
         limiter.destroy();

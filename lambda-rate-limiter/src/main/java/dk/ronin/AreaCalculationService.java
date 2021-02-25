@@ -16,14 +16,21 @@ public class AreaCalculationService {
     private final Limiter onlyOneCallLimiter;
 
     public AreaV1Response rectangle(String apiKey, RectangleDimensionsV1 dimensions) {
-        AreaV1Response invokeResponse = onlyOneCallLimiter.invoke(apiKey, dimensions, rectangleDimensionsV1 -> {
-            Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
-            return AreaV1Response.builder()
-                    .success(true)
-                    .response(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()))
-                    .build();
-        });
-
+        AreaV1Response invokeResponse = onlyOneCallLimiter.invoke(
+                apiKey,
+                dimensions,
+                rectangleDimensionsV1 -> {
+                    Uninterruptibles.sleepUninterruptibly(5000, TimeUnit.MILLISECONDS);
+                    return AreaV1Response.builder()
+                            .success(true)
+                            .response(new AreaV1("rectangle", dimensions.getLength() * dimensions.getWidth()))
+                            .build();
+                },
+                rectangleDimensionsV1 -> AreaV1Response.builder()
+                        .success(false)
+                        .errorMessage("Too Many Requests")
+                        .build()
+        );
         return invokeResponse;
     }
 }

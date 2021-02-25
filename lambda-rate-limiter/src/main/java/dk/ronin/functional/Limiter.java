@@ -38,14 +38,11 @@ public class Limiter {
         return "" + apply;
     }
 
-    public AreaV1Response invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1Response> actionAllowed) {
+    public AreaV1Response invoke(String apiKey, RectangleDimensionsV1 request, Function<RectangleDimensionsV1, AreaV1Response> actionAllowed, Function<RectangleDimensionsV1, AreaV1Response> actionOr) {
         SimpleRateLimiter rateLimiter = resolveSimpleRateLimiter(apiKey);
         boolean allowRequest = rateLimiter.tryAcquire();
         if (!allowRequest) {
-            return AreaV1Response.builder()
-                    .success(false)
-                    .errorMessage("Too Many Requests")
-                    .build();
+            return actionOr.apply(request);
         }
         try {
             return actionAllowed.apply(request);
